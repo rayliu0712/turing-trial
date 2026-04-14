@@ -1,0 +1,26 @@
+{
+  "type": "module",
+  "name": "turing-trial",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/legacy/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.32.1",
+  "devDependencies": {
+    "@types/blessed": "^0.1.27",
+    "@types/node": "^25.5.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "ai": "^6.0.154",
+    "ansi-escapes": "^7.3.0",
+    "blessed": "^0.1.81"
+  }
+}
