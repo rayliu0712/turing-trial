@@ -1,5 +1,5 @@
 import { generateText, streamText } from 'ai';
-import type { GameEvent, Player, PlayerId, Round } from '../backend/types.js';
+import type { GameEvent, Player, PlayerId, Round } from '../core/types.js';
 import {
   execute,
   newFirstRound,
@@ -7,7 +7,7 @@ import {
   parseVote,
   renderRoles,
   revealVotes,
-} from '../backend/round.js';
+} from '../core/game.js';
 import { stdout } from 'node:process';
 import { styleText, type InspectColor } from 'node:util';
 import { writeFile } from 'node:fs/promises';
@@ -16,7 +16,7 @@ function log(format: readonly InspectColor[], text: string) {
   stdout.write(`${styleText(format, ` ${text} `)}\n\n`);
 }
 
-class Game {
+export class Trial {
   private readonly rounds: Round[] = [];
   private readonly playerMap: Map<PlayerId, Player>;
   private get round() {
@@ -26,10 +26,16 @@ class Game {
     return this.round.playerIds;
   }
 
-  constructor(
-    players: readonly Player[],
-    private readonly doubleVote: boolean,
-  ) {
+  private readonly doubleVote: boolean;
+
+  constructor({
+    players,
+    doubleVote,
+  }: {
+    players: readonly Player[];
+    doubleVote: boolean;
+  }) {
+    this.doubleVote = doubleVote;
     this.rounds.push(newFirstRound(players));
     this.playerMap = new Map(players.map((v, i) => [`id-${i + 1}`, v]));
   }
@@ -150,28 +156,3 @@ class Game {
     await writeFile(`turing-trial-${Date.now()}.json`, str);
   }
 }
-
-const game = new Game(
-  [
-    { model: 'xai/grok-4.20-reasoning', name: 'grok' },
-    // {
-    //   model: 'zai/glm-5.1',
-    //   name: 'glm',
-    // },
-    {
-      model: 'google/gemini-3-flash',
-      name: 'gemini',
-    },
-    {
-      model: 'moonshotai/kimi-k2.5',
-      name: 'kimi',
-    },
-    {
-      model: 'alibaba/qwen3.5-flash',
-      name: 'qwen',
-    },
-  ],
-  true,
-);
-await game.loop();
-await game.exportAsJson();
