@@ -11,9 +11,6 @@ importers:
       ai:
         specifier: ^6.0.154
         version: 6.0.154(zod@4.3.6)
-      ansi-escapes:
-        specifier: ^7.3.0
-        version: 7.3.0
       blessed:
         specifier: ^0.1.81
         version: 0.1.81
@@ -228,18 +225,10 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  ansi-escapes@7.3.0:
-    resolution: {integrity: sha512-BvU8nYgGQBxcmMuEeUEmNTvrMVjJNSH7RgW24vXexN4Ven6qCvy4TntnvlnwnMLTVlcRQQdbRY8NKnaIoeWDNg==}
-    engines: {node: '>=18'}
-
   blessed@0.1.81:
     resolution: {integrity: sha512-LoF5gae+hlmfORcG1M5+5XZi4LBmvlXTzwJWzUlPryN/SJdSflZvROM2TwkT0GMpq7oqT48NRd4GS7BiVBc5OQ==}
     engines: {node: '>= 0.8.0'}
     hasBin: true
-
-  environment@1.1.0:
-    resolution: {integrity: sha512-xUtoPkMggbz0MPyPiIWr1Kp4aeWJjDZ6SMvURhimjdZgsRuDplF5/s9hcgGhyXMhs+6vpnuoiZ2kFiu3FMnS8Q==}
-    engines: {node: '>=18'}
 
   esbuild@0.27.7:
     resolution: {integrity: sha512-IxpibTjyVnmrIQo5aqNpCgoACA/dTKLTlhMHihVHhdkxKyPO1uBBthumT0rdHmcsk9uMonIWS0m4FljWzILh3w==}
@@ -400,13 +389,7 @@ snapshots:
       '@opentelemetry/api': 1.9.0
       zod: 4.3.6
 
-  ansi-escapes@7.3.0:
-    dependencies:
-      environment: 1.1.0
-
   blessed@0.1.81: {}
-
-  environment@1.1.0: {}
 
   esbuild@0.27.7:
     optionalDependencies:
