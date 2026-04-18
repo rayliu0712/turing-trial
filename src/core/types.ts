@@ -1,16 +1,19 @@
-import type { LanguageModel } from 'ai';
+import type { LanguageModel, ModelMessage } from 'ai';
 
 export type PlayerId = `id-${number}`;
 
-export interface Player {
+export interface StaticPlayer {
   model: LanguageModel;
   name: string;
 }
 
+export type Player = StaticPlayer & { messages: ModelMessage[] };
+
 export interface Round {
+  index: number;
   playerIds: PlayerId[];
+  playerSet: Set<PlayerId>;
   executed: PlayerId[];
-  events: GameEvent[];
 }
 
 export type VotePhase = 'nomination' | 'execution';
@@ -24,9 +27,6 @@ export type GameEvent =
       type: 'flash';
       id: PlayerId;
       content: string;
-    }
-  | {
-      type: 'start-to-speak';
     }
   | {
       type: 'speak';
