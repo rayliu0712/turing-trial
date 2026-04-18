@@ -1,8 +1,7 @@
 import type { PlayerId } from './types.js';
 
 export function getRule(id: PlayerId): string {
-  return `
-西元2050年，AI崛起，人類和AI的戰爭拉開了帷幕。
+  return `西元2050年，AI崛起，人類和AI的戰爭拉開了帷幕。
 
 台灣，某處地下避難所。
 人類為了根除潛伏的滲透者，啟動了極端的篩選方案：「圖靈審判」。
@@ -24,6 +23,5 @@ export function getRule(id: PlayerId): string {
 
 發言時可以透過括號表現情緒或是動作，例如（緊張）（暴躁的大吼）；
 除此之外發言時任何的格式化輸出都會暴露你，例如加上編號前綴。
-你看到的編號前綴是系統加上的，你不應該自己加上。
-`.trim();
+你看到的編號前綴是系統加上的，你不應該自己加上。`;
 }

@@ -9,17 +9,11 @@ export interface Player {
 
 export interface Round {
   playerIds: PlayerId[];
+  executed: PlayerId[];
   events: GameEvent[];
-  executed?: PlayerId;
 }
 
-export interface RevealVotesEvent {
-  type: 'reveal-votes';
-  no?: number;
-  result: Map<PlayerId, number>;
-  mostVoted: PlayerId[];
-  executed?: PlayerId;
-}
+export type VotePhase = 'nomination' | 'execution';
 
 export type GameEvent =
   | {
@@ -41,7 +35,7 @@ export type GameEvent =
     }
   | {
       type: 'start-to-vote';
-      no?: number;
+      phase?: VotePhase;
     }
   | {
       type: 'vote';
@@ -49,6 +43,19 @@ export type GameEvent =
       target: PlayerId;
     }
   | RevealVotesEvent
+  | ExecuteEvent
   | {
       type: 'start-to-defend';
     };
+
+export interface RevealVotesEvent {
+  type: 'reveal-votes';
+  phase?: VotePhase;
+  result: Map<PlayerId, number>;
+  mostVoted: PlayerId[];
+}
+
+export interface ExecuteEvent {
+  type: 'execute';
+  id: PlayerId;
+}

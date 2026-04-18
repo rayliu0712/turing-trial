@@ -1,48 +1,254 @@
-import { getRule } from './rule.js';
-import type { PlayerId, Round, Player, RevealVotesEvent } from './types.js';
 import type { ModelMessage } from 'ai';
+import type {
+  ExecuteEvent,
+  GameEvent,
+  Player,
+  PlayerId,
+  RevealVotesEvent,
+  Round,
+  VotePhase,
+} from './types.js';
+import { Roles } from './roles.js';
+import { getRule } from './rule.js';
 
-export function newFirstRound(players: readonly Player[]): Round {
-  return {
-    playerIds: players.map((_, i) => `id-${i + 1}` as const),
-    events: [],
-  };
+export class Game {
+  private readonly playerMap: Map<PlayerId, Player>;
+  private readonly rounds: Round[] = [];
+
+  constructor(players: readonly Player[]) {
+    this.playerMap = new Map(players.map((v, i) => [`id-${i + 1}`, v]));
+  }
+
+  getPlayer(id: PlayerId): Player {
+    return this.playerMap.get(id)!;
+  }
+
+  private get round() {
+    return this.rounds[this.rounds.length - 1];
+  }
+
+  get playerIds() {
+    return this.round.playerIds;
+  }
+
+  newRound() {
+    if (this.rounds.length === 0) {
+      this.rounds.push({
+        playerIds: [...this.playerMap.keys()],
+        executed: [],
+        events: [],
+      });
+      return;
+    }
+
+    const set = new Set(this.round.playerIds);
+    for (const id of this.round.executed) {
+      set.delete(id);
+    }
+    this.rounds.push({
+      playerIds: [...set],
+      executed: [],
+      events: [],
+    });
+  }
+
+  newEvent(event: GameEvent) {
+    if (event.type === 'execute') {
+      this.round.executed.push(event.id);
+    }
+    this.round.events.push(event);
+  }
+
+  renderRoles(id: PlayerId): ModelMessage[] {
+    const roles = new Roles();
+
+    for (const [i, { playerIds, events }] of this.rounds.entries()) {
+      roles.user(`廣播：存活受驗者為 ${playerIds.join('、')}。`);
+      roles.user(`廣播：第 ${i + 1} 輪開始。`);
+
+      for (const event of events) {
+        switch (event.type) {
+          case 'broadcast':
+            roles.user(`廣播：${event.content}。`);
+            break;
+
+          case 'flash':
+            if (event.id === id)
+              roles.user(`（你腦海裡閃過一些念頭：${event.content}）`);
+            break;
+
+          case 'start-to-speak':
+            roles.user(`廣播：開始發言。`);
+            break;
+
+          case 'speak':
+            if (event.id === id) roles.assistant(event.content);
+            else roles.user(`${event.id}：${event.content}`);
+            break;
+
+          case 'start-to-vote':
+            roles.user(
+              `廣播：開始${votePhase(event.phase)}投票，以 <vote>id-N</vote> 格式輸出你要投票淘汰的受驗者編號。`,
+            );
+            break;
+
+          case 'vote':
+            if (event.id === id)
+              roles.assistant(`<vote>${event.target}</vote>`);
+            break;
+
+          case 'reveal-votes':
+            roles.user(
+              `廣播：${votePhase(event.phase)}投票結果為${[...event.result]
+                .map((v) => `${v[0]} ${v[1]}票`)
+                .join('、')}。`,
+            );
+            break;
+
+          case 'execute':
+            roles.user(`廣播：已抹殺 ${event.id}。`);
+            break;
+
+          case 'start-to-defend':
+            roles.user(`廣播：開始辯護。`);
+            break;
+        }
+      }
+    }
+
+    return [
+      {
+        role: 'system',
+        content: getRule(id),
+      },
+      ...roles.toMessages(),
+    ];
+  }
+
+  parseVote(text: string): PlayerId | null {
+    const tagMatches = [
+      ...text.matchAll(/<votes?>\s*(id-\d+)\s*<\/votes?>/g),
+    ].map((m) => m[1]);
+
+    const matches =
+      tagMatches.length > 0
+        ? tagMatches
+        : [...text.matchAll(/id-\d+/g)].map((m) => m[0]);
+
+    if (matches.length === 0) return null;
+
+    const unique = new Set(matches);
+    if (unique.size > 1) return null;
+
+    const target = matches[0] as PlayerId;
+    return this.round.playerIds.find((v) => v === target) ? target : null;
+  }
+
+  toMarkdown(): string {
+    const lines: string[] = [];
+    const nameTag = (id: PlayerId) => {
+      const { name } = this.playerMap.get(id)!;
+      return `${name} (${id})`;
+    };
+
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+    lines.push(`**產生時間：** ${timestamp}`);
+    lines.push('');
+    lines.push('**玩家：**');
+    lines.push('');
+    for (const [id, { name }] of this.playerMap) {
+      lines.push(`- ${nameTag(id)}`);
+    }
+    lines.push('');
+
+    for (const [i, { playerIds, events }] of this.rounds.entries()) {
+      lines.push(`# 第 ${i + 1} 輪`);
+      lines.push('');
+      lines.push(`**存活受驗者：** ${playerIds.map(nameTag).join('、')}`);
+      lines.push('');
+
+      for (const event of events) {
+        switch (event.type) {
+          case 'broadcast':
+            lines.push(`> 📢 ${event.content}`);
+            lines.push('');
+            break;
+
+          case 'flash':
+            lines.push(
+              `*💭 ${nameTag(event.id)} 腦海中閃過念頭：${event.content}*`,
+            );
+            lines.push('');
+            break;
+
+          case 'start-to-speak':
+            lines.push('---');
+            lines.push('');
+            lines.push('### 發言階段');
+            lines.push('');
+            break;
+
+          case 'speak': {
+            lines.push(
+              `> ${nameTag(event.id)}：${event.content.split('\n').join('\n> ')}`,
+            );
+            lines.push('');
+            break;
+          }
+
+          case 'start-to-vote':
+            lines.push('---');
+            lines.push('');
+            lines.push(`### ${votePhase(event.phase)}投票階段`);
+            lines.push('');
+            break;
+
+          case 'vote':
+            lines.push(`- ${nameTag(event.id)} → ${nameTag(event.target)}`);
+            break;
+
+          case 'reveal-votes': {
+            const entries = [...event.result];
+            lines.push('');
+            lines.push(
+              `> 投票結果：${entries.map(([id, count]) => `${nameTag(id)} ${count} 票`).join('、')}`,
+            );
+            lines.push('');
+            break;
+          }
+
+          case 'execute':
+            lines.push(`> 💀 已抹殺 **${nameTag(event.id)}**`);
+            lines.push('');
+            break;
+
+          case 'start-to-defend':
+            lines.push('---');
+            lines.push('');
+            lines.push('### 辯護階段');
+            lines.push('');
+            break;
+        }
+      }
+    }
+
+    return lines.join('\n');
+  }
 }
 
-export function newRound(previousRound: Round): Round {
-  const { playerIds, executed } = previousRound;
-
-  return {
-    playerIds: playerIds.filter((v) => v !== executed),
-    events: [],
-  };
+function votePhase(phase?: VotePhase): string {
+  if (phase === undefined) return '';
+  if (phase === 'nomination') return '提名階段';
+  return '處決階段';
 }
 
-export function parseVote(text: string, playerSet: Set<PlayerId>): PlayerId {
-  const tagMatches = [
-    ...text.matchAll(/<votes?>\s*(id-\d+)\s*<\/votes?>/g),
-  ].map((m) => m[1]);
-  const matches =
-    tagMatches.length > 0
-      ? tagMatches
-      : [...text.matchAll(/id-\d+/g)].map((m) => m[0]);
-
-  if (matches.length === 0) throw new Error('投票解析失敗：未找到 PlayerId');
-
-  const unique = new Set(matches);
-  if (unique.size > 1)
-    throw new Error(
-      `投票解析失敗：出現多個不同的 PlayerId：${[...unique].join('、')}`,
-    );
-
-  const target = matches[0] as PlayerId;
-  if (!playerSet.has(target))
-    throw new Error(`投票解析失敗：未知的 PlayerId ${target}`);
-
-  return target;
-}
-
-export function revealVotes(votes: readonly PlayerId[]): RevealVotesEvent {
+export function revealVotes(
+  votes: readonly PlayerId[],
+  phase?: VotePhase,
+): RevealVotesEvent {
   const result = new Map<PlayerId, number>();
 
   for (const id of votes) {
@@ -65,124 +271,20 @@ export function revealVotes(votes: readonly PlayerId[]): RevealVotesEvent {
 
   return {
     type: 'reveal-votes',
+    phase,
     result,
     mostVoted,
   };
 }
 
-export function execute({
-  no,
-  result,
-  mostVoted,
-}: RevealVotesEvent): RevealVotesEvent {
-  const executed =
+export function execute(mostVoted: readonly PlayerId[]): ExecuteEvent {
+  const id =
     mostVoted.length === 1
       ? mostVoted[0]
       : mostVoted[Math.floor(Math.random() * mostVoted.length)];
 
   return {
-    type: 'reveal-votes',
-    no,
-    result,
-    mostVoted,
-    executed,
+    type: 'execute',
+    id,
   };
-}
-
-export function renderRoles(
-  rounds: readonly Round[],
-  id: PlayerId,
-): ModelMessage[] {
-  const roles = new (class {
-    private messages: ModelMessage[] = [
-      {
-        role: 'system',
-        content: getRule(id),
-      },
-    ];
-    private userBuffer: string[] = [];
-
-    private flushUserBuffer() {
-      if (this.userBuffer.length > 0) {
-        this.messages.push({
-          role: 'user',
-          content: this.userBuffer.join('\n'),
-        });
-        this.userBuffer.length = 0;
-      }
-    }
-
-    user(content: string) {
-      this.userBuffer.push(content);
-    }
-
-    assistant(content: string) {
-      this.flushUserBuffer();
-      this.messages.push({ role: 'assistant', content });
-    }
-
-    toMessages(): ModelMessage[] {
-      this.flushUserBuffer();
-      return this.messages;
-    }
-  })();
-
-  for (const [i, { playerIds, events }] of rounds.entries()) {
-    roles.user(`廣播：存活受驗者為${playerIds.join('、')}。`);
-    roles.user(`廣播：第${i}輪開始。`);
-
-    for (const event of events) {
-      switch (event.type) {
-        case 'broadcast':
-          roles.user(`廣播：${event.content}。`);
-          break;
-
-        case 'flash':
-          if (event.id === id)
-            roles.user(`（你腦海裡閃過一些念頭：${event.content}）`);
-          break;
-
-        case 'start-to-speak':
-          roles.user(`廣播：本輪發言階段開始。`);
-          break;
-
-        case 'speak':
-          if (event.id === id) roles.assistant(event.content);
-          else roles.user(`${event.id}：${event.content}`);
-          break;
-
-        case 'start-to-vote':
-          roles.user(
-            `廣播：本輪${event.no === undefined ? '' : `第${event.no}次`}投票階段開始，以 <vote>id-N</vote> 格式輸出你要投票淘汰的受驗者編號。`,
-          );
-          break;
-
-        case 'vote':
-          if (event.id === id) roles.assistant(`<vote>${event.target}</vote>`);
-          break;
-
-        case 'reveal-votes':
-          roles.user(
-            `廣播：本輪${event.no === undefined ? '' : `第${event.no}次`}投票結果為${[
-              ...event.result,
-            ]
-              .map((v) => `${v[0]} ${v[1]}票`)
-              .join('、')}。`,
-          );
-          if (event.executed) {
-            if (event.mostVoted.length > 1) {
-              roles.user(`廣播：出現同票，將隨機抹殺最高票者其中一人。`);
-            }
-            roles.user(`廣播：已抹殺${event.executed}。`);
-          }
-          break;
-
-        case 'start-to-defend':
-          roles.user(`廣播：本輪辯護階段開始。`);
-          break;
-      }
-    }
-  }
-
-  return roles.toMessages();
 }
