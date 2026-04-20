@@ -1,28 +1,21 @@
+import { stdout } from 'node:process';
+import { styleText, type InspectColor } from 'node:util';
 import { generateText, streamText } from 'ai';
 import type {
-  StaticPlayer,
   PlayerId,
   VotePhase,
   RevealVotesEvent,
+  TrialConfig,
 } from '../core/types.js';
-import { execute, Game, parseVote, revealVotes } from '../core/game.js';
-import { stdout } from 'node:process';
-import { styleText, type InspectColor } from 'node:util';
+import { Game } from '../core/game.js';
+import { execute, parseVote, revealVotes } from '../core/vote.js';
 
-export class Trial {
+export class CliTrial {
   private readonly game: Game;
   private readonly doubleVote: boolean;
   private readonly voteMaxRetry: number;
 
-  constructor({
-    staticPlayers,
-    doubleVote,
-    voteMaxRetry = 2,
-  }: {
-    staticPlayers: readonly StaticPlayer[];
-    doubleVote: boolean;
-    voteMaxRetry?: number;
-  }) {
+  constructor({ staticPlayers, doubleVote, voteMaxRetry = 2 }: TrialConfig) {
     this.doubleVote = doubleVote;
     this.voteMaxRetry = voteMaxRetry;
     this.game = new Game(staticPlayers);
@@ -92,10 +85,8 @@ export class Trial {
     stdout.write('\n\n');
   }
 
-  private async vote(
-    id: PlayerId,
-    playerSet: Set<PlayerId>,
-  ): Promise<PlayerId> {
+  private async vote(id: PlayerId): Promise<PlayerId> {
+    const { model, messages } = this.game.getPlayer(id);
     const meTag = this.nameTag(id);
 
     for (let i = 0; i < this.voteMaxRetry; i++) {
@@ -103,11 +94,10 @@ export class Trial {
         stdout.write(`${meTag} 第 ${i + 1}/${this.voteMaxRetry} 次重試\n`);
       }
 
-      const { model, messages } = this.game.getPlayer(id);
       const { text } = await generateText({ model, messages });
 
       const target = parseVote(text);
-      if (target === null || !playerSet.has(target)) continue;
+      if (target === null || !this.game.existPlayer(target)) continue;
 
       this.game.emit({ type: 'vote', id, target });
       stdout.write(`${meTag} --> ${this.nameTag(target)}\n`);
@@ -118,9 +108,8 @@ export class Trial {
   }
 
   private async collectVotes(phase?: VotePhase): Promise<PlayerId[]> {
-    const playerSet = new Set(this.game.playerIds);
     const votes = await Promise.all(
-      this.game.playerIds.map((k) => this.vote(k, playerSet)),
+      this.game.playerIds.map((k) => this.vote(k)),
     );
     stdout.write('\n');
 

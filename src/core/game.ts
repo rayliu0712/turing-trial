@@ -9,7 +9,6 @@ import type {
 } from './types.js';
 import { getRule } from './rule.js';
 import { pushAiContent, pushUserContent } from './messages.js';
-export { parseVote, revealVotes, execute } from './vote.js';
 
 export class Game {
   private readonly playerMap: Map<PlayerId, Player>;
@@ -41,22 +40,29 @@ export class Game {
     return this.playerMap.get(id)!;
   }
 
+  existPlayer(id: PlayerId): boolean {
+    return this.round!.playerSet.has(id);
+  }
+
   newRound() {
     if (this.round === undefined) {
+      const playerIds = [...this.playerMap.keys()];
       this.round = {
         index: 1,
-        playerIds: [...this.playerMap.keys()],
+        playerIds,
+        playerSet: new Set(playerIds),
         executed: [],
       };
     } else {
-      const set = new Set(this.round.playerIds);
+      const playerSet = this.round.playerSet;
       for (const id of this.round.executed) {
-        set.delete(id);
+        playerSet.delete(id);
       }
 
       this.round = {
         index: this.round.index + 1,
-        playerIds: [...set],
+        playerIds: [...playerSet],
+        playerSet,
         executed: [],
       };
     }

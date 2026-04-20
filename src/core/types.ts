@@ -2,19 +2,6 @@ import type { LanguageModel, ModelMessage } from 'ai';
 
 export type PlayerId = `id-${number}`;
 
-export interface StaticPlayer {
-  model: LanguageModel;
-  name: string;
-}
-
-export type Player = StaticPlayer & { messages: ModelMessage[] };
-
-export interface Round {
-  index: number;
-  playerIds: PlayerId[];
-  executed: PlayerId[];
-}
-
 export type VotePhase = 'nomination' | 'execution';
 
 export type GameEvent =
@@ -57,4 +44,24 @@ export interface RevealVotesEvent {
 export interface ExecuteEvent {
   type: 'execute';
   id: PlayerId;
+}
+
+export interface StaticPlayer {
+  model: LanguageModel;
+  name: string;
+}
+
+export type Player = StaticPlayer & { messages: ModelMessage[] };
+
+export interface Round {
+  index: number;
+  playerIds: PlayerId[];
+  playerSet: Set<PlayerId>;
+  executed: PlayerId[];
+}
+
+export interface TrialConfig {
+  staticPlayers: readonly StaticPlayer[];
+  doubleVote: boolean;
+  voteMaxRetry?: number;
 }
