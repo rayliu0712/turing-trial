@@ -62,6 +62,6 @@ export interface Round {
 
 export interface TrialConfig {
   staticPlayers: readonly StaticPlayer[];
-  doubleVote: boolean;
+  doubleVote?: boolean;
   voteMaxRetry?: number;
 }

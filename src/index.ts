@@ -1,15 +1,10 @@
-import type { TrialConfig } from './core/types.js';
+import { argv } from 'node:process';
 import { CliTrial } from './cli/trial.js';
+import { TuiTrial } from './tui/trial.js';
+import { config } from './config.js';
 
-const config: TrialConfig = {
-  staticPlayers: [
-    { model: 'xai/grok-4.20-reasoning', name: 'Grok' },
-    { model: 'google/gemini-3-flash', name: 'Gemini' },
-    { model: 'moonshotai/kimi-k2.5', name: 'Kimi' },
-    { model: 'alibaba/qwen3.6-plus', name: 'Qwen' },
-  ],
-  doubleVote: false,
-};
+const args = argv.slice(2);
+const isCli = args.some((v) => v.toLowerCase() === 'cli');
 
-const trial = new CliTrial(config);
+const trial = new (isCli ? CliTrial : TuiTrial)(config);
 await trial.loop();

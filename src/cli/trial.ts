@@ -15,7 +15,11 @@ export class CliTrial {
   private readonly doubleVote: boolean;
   private readonly voteMaxRetry: number;
 
-  constructor({ staticPlayers, doubleVote, voteMaxRetry = 2 }: TrialConfig) {
+  constructor({
+    staticPlayers,
+    doubleVote = true,
+    voteMaxRetry = 2,
+  }: TrialConfig) {
     this.doubleVote = doubleVote;
     this.voteMaxRetry = voteMaxRetry;
     this.game = new Game(staticPlayers);
