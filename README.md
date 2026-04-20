@@ -21,6 +21,12 @@
 - [bilibili](https://www.bilibili.com/video/BV17DXkYWE1a/?share_source=copy_web)
 - [YouTube](https://youtu.be/Ur8MbOj17Gs?si=qFvRY9Z8qnUkImPC)
 
+## 環境需求
+
+- **Node.js**
+- **套件管理器**：npm、pnpm 或 yarn
+- **API Key**：Vercel AI Gateway 或其他 AI Provider 的金鑰
+
 ## 如何執行
 
 ### 透過 Vercel AI Gateway
