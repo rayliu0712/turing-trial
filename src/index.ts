@@ -1,10 +1,11 @@
-import { argv } from 'node:process';
+import { argv, loadEnvFile } from 'node:process';
 import { CliTrial } from './cli/trial.js';
 import { TuiTrial } from './tui/trial.js';
 import { config } from './config.js';
 
 const args = argv.slice(2);
-const isCli = args.some((v) => v.toLowerCase() === 'cli');
+const isTui = args.some((v) => v.toLowerCase() === 'tui');
 
-const trial = new (isCli ? CliTrial : TuiTrial)(config);
+loadEnvFile('./.env.local');
+const trial = new (isTui ? TuiTrial : CliTrial)(config);
 await trial.loop();
