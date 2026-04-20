@@ -1,25 +1,30 @@
 import { generateText, streamText } from 'ai';
-import type { StaticPlayer, PlayerId, VotePhase } from '../core/types.js';
-import { execute, Game, revealVotes } from '../core/game.js';
+import type {
+  StaticPlayer,
+  PlayerId,
+  VotePhase,
+  RevealVotesEvent,
+} from '../core/types.js';
+import { execute, Game, parseVote, revealVotes } from '../core/game.js';
 import { stdout } from 'node:process';
 import { styleText, type InspectColor } from 'node:util';
-
-function log(format: readonly InspectColor[], text: string) {
-  stdout.write(`${styleText(format, ` ${text} `)}\n\n`);
-}
 
 export class Trial {
   private readonly game: Game;
   private readonly doubleVote: boolean;
+  private readonly voteMaxRetry: number;
 
   constructor({
     staticPlayers,
     doubleVote,
+    voteMaxRetry = 2,
   }: {
     staticPlayers: readonly StaticPlayer[];
     doubleVote: boolean;
+    voteMaxRetry?: number;
   }) {
     this.doubleVote = doubleVote;
+    this.voteMaxRetry = voteMaxRetry;
     this.game = new Game(staticPlayers);
   }
 
@@ -54,7 +59,7 @@ export class Trial {
         }
 
         this.game.emit({ type: 'start-to-vote', phase: 'execution' });
-        log(['bgWhite', 'red'], `第 ${this.game.roundIndex} 輪處決階段投票`);
+        log(['bgWhite', 'red'], `第 ${this.game.roundIndex} 輪抹殺階段投票`);
         const mostVoted2 = await this.collectVotes('execution');
         this.doExecute(mostVoted2);
         continue;
@@ -87,19 +92,25 @@ export class Trial {
     stdout.write('\n\n');
   }
 
-  private async vote(id: PlayerId): Promise<PlayerId> {
-    for (let i = 0; i < 2; i++) {
+  private async vote(
+    id: PlayerId,
+    playerSet: Set<PlayerId>,
+  ): Promise<PlayerId> {
+    const meTag = this.nameTag(id);
+
+    for (let i = 0; i < this.voteMaxRetry; i++) {
+      if (i > 0) {
+        stdout.write(`${meTag} 第 ${i + 1}/${this.voteMaxRetry} 次重試\n`);
+      }
+
       const { model, messages } = this.game.getPlayer(id);
       const { text } = await generateText({ model, messages });
 
-      const target = this.game.parseVote(text);
-      if (target === null) {
-        // 加上反饋？
-        continue;
-      }
+      const target = parseVote(text);
+      if (target === null || !playerSet.has(target)) continue;
 
       this.game.emit({ type: 'vote', id, target });
-      stdout.write(`${this.nameTag(id)} -> ${this.nameTag(target)}\n`);
+      stdout.write(`${meTag} --> ${this.nameTag(target)}\n`);
       return target;
     }
 
@@ -107,12 +118,13 @@ export class Trial {
   }
 
   private async collectVotes(phase?: VotePhase): Promise<PlayerId[]> {
+    const playerSet = new Set(this.game.playerIds);
     const votes = await Promise.all(
-      this.game.playerIds.map((k) => this.vote(k)),
+      this.game.playerIds.map((k) => this.vote(k, playerSet)),
     );
     stdout.write('\n');
 
-    const event = revealVotes(votes, phase);
+    const event: RevealVotesEvent = { ...revealVotes(votes), phase };
     this.game.emit(event);
     return event.mostVoted;
   }
@@ -120,6 +132,10 @@ export class Trial {
   private doExecute(mostVoted: readonly PlayerId[]) {
     const event = execute(mostVoted);
     this.game.emit(event);
-    log(['bgRed', 'white'], `處決 ${this.nameTag(event.id)}`);
+    log(['bgRed', 'white'], `抹殺 ${this.nameTag(event.id)}`);
   }
+}
+
+function log(format: readonly InspectColor[], text: string) {
+  stdout.write(`${styleText(format, ` ${text} `)}\n\n`);
 }

@@ -12,7 +12,6 @@ export type Player = StaticPlayer & { messages: ModelMessage[] };
 export interface Round {
   index: number;
   playerIds: PlayerId[];
-  playerSet: Set<PlayerId>;
   executed: PlayerId[];
 }
 

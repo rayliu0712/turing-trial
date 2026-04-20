@@ -1,17 +1,15 @@
 import type { ModelMessage } from 'ai';
 import type {
-  ExecuteEvent,
   GameEvent,
   Player,
   StaticPlayer,
   PlayerId,
-  RevealVotesEvent,
   Round,
   VotePhase,
 } from './types.js';
 import { getRule } from './rule.js';
 import { pushAiContent, pushUserContent } from './messages.js';
-export { revealVotes, execute } from './vote.js';
+export { parseVote, revealVotes, execute } from './vote.js';
 
 export class Game {
   private readonly playerMap: Map<PlayerId, Player>;
@@ -43,44 +41,22 @@ export class Game {
     return this.playerMap.get(id)!;
   }
 
-  doPushUserContent({
-    content,
-    excepted,
-  }: {
-    content: string;
-    excepted?: PlayerId;
-  }) {
-    for (const [id, { messages }] of this.playerMap) {
-      if (id !== excepted) {
-        pushUserContent(messages, content);
-      }
-    }
-  }
-
-  doPushAiContent({ id, content }: { id: PlayerId; content: string }) {
-    const { messages } = this.getPlayer(id);
-    pushAiContent(messages, content);
-  }
-
   newRound() {
     if (this.round === undefined) {
-      const playerIds = [...this.playerMap.keys()];
       this.round = {
         index: 1,
-        playerIds,
-        playerSet: new Set(playerIds),
+        playerIds: [...this.playerMap.keys()],
         executed: [],
       };
     } else {
-      const playerSet = this.round.playerSet;
+      const set = new Set(this.round.playerIds);
       for (const id of this.round.executed) {
-        playerSet.delete(id);
+        set.delete(id);
       }
 
       this.round = {
         index: this.round.index + 1,
-        playerIds: [...playerSet],
-        playerSet,
+        playerIds: [...set],
         executed: [],
       };
     }
@@ -145,28 +121,28 @@ export class Game {
     }
   }
 
-  parseVote(text: string): PlayerId | null {
-    const tagMatches = [
-      ...text.matchAll(/<votes?>\s*(id-\d+)\s*<\/votes?>/g),
-    ].map((m) => m[1]);
+  private doPushUserContent({
+    content,
+    excepted,
+  }: {
+    content: string;
+    excepted?: PlayerId;
+  }) {
+    for (const [id, { messages }] of this.playerMap) {
+      if (id !== excepted) {
+        pushUserContent(messages, content);
+      }
+    }
+  }
 
-    const matches =
-      tagMatches.length > 0
-        ? tagMatches
-        : [...text.matchAll(/id-\d+/g)].map((m) => m[0]);
-
-    if (matches.length === 0) return null;
-
-    const unique = new Set(matches);
-    if (unique.size > 1) return null;
-
-    const target = matches[0] as PlayerId;
-    return this.round!.playerSet.has(target) ? target : null;
+  private doPushAiContent({ id, content }: { id: PlayerId; content: string }) {
+    const { messages } = this.getPlayer(id);
+    pushAiContent(messages, content);
   }
 }
 
 function votePhase(phase?: VotePhase): string {
   if (phase === undefined) return '';
   if (phase === 'nomination') return '提名階段';
-  return '處決階段';
+  return '抹殺階段';
 }

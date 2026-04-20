@@ -1,14 +1,20 @@
-import type {
-  ExecuteEvent,
-  PlayerId,
-  RevealVotesEvent,
-  VotePhase,
-} from './types.js';
+import type { ExecuteEvent, PlayerId, RevealVotesEvent } from './types.js';
 
-export function revealVotes(
-  votes: readonly PlayerId[],
-  phase?: VotePhase,
-): RevealVotesEvent {
+export function parseVote(text: string): PlayerId | null {
+  const tagMatch = text.match(/<votes?>\s*(id-\d+)\s*<\/votes?>/);
+  if (tagMatch) {
+    return tagMatch[1] as PlayerId;
+  }
+
+  const textMatch = text.match(/id-\d+/);
+  if (textMatch) {
+    return textMatch[0] as PlayerId;
+  }
+
+  return null;
+}
+
+export function revealVotes(votes: readonly PlayerId[]): RevealVotesEvent {
   const result = new Map<PlayerId, number>();
 
   for (const id of votes) {
@@ -16,9 +22,11 @@ export function revealVotes(
   }
 
   // 票數降序排序，當同票時以 playerId 升序排序
-  const sorted = [...result].toSorted(
-    (a, b) => b[1] - a[1] || parseInt(a[0].slice(3)) - parseInt(b[0].slice(3)),
-  );
+  const sorted = [...result].toSorted((a, b) => {
+    const votes = b[1] - a[1];
+    if (votes != 0) return votes;
+    return parseInt(a[0].slice(3)) - parseInt(b[0].slice(3));
+  });
 
   const maxVotes = sorted[0][1];
   const mostVoted = [sorted[0][0]];
@@ -31,7 +39,6 @@ export function revealVotes(
 
   return {
     type: 'reveal-votes',
-    phase,
     result,
     mostVoted,
   };
