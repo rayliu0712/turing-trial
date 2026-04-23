@@ -11,13 +11,7 @@ importers:
       ai:
         specifier: ^6.0.154
         version: 6.0.154(zod@4.3.6)
-      blessed:
-        specifier: ^0.1.81
-        version: 0.1.81
     devDependencies:
-      '@types/blessed':
-        specifier: ^0.1.27
-        version: 0.1.27
       '@types/node':
         specifier: ^25.5.2
         version: 25.5.2
@@ -209,9 +203,6 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
-  '@types/blessed@0.1.27':
-    resolution: {integrity: sha512-ZOQGjLvWDclAXp0rW5iuUBXeD6Gr1PkitN7tj7/G8FCoSzTsij6OhXusOzMKhwrZ9YlL2Pmu0d6xJ9zVvk+Hsg==}
-
   '@types/node@25.5.2':
     resolution: {integrity: sha512-tO4ZIRKNC+MDWV4qKVZe3Ql/woTnmHDr5JD8UI5hn2pwBrHEwOEMZK7WlNb5RKB6EoJ02gwmQS9OrjuFnZYdpg==}
 
@@ -224,11 +215,6 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
-
-  blessed@0.1.81:
-    resolution: {integrity: sha512-LoF5gae+hlmfORcG1M5+5XZi4LBmvlXTzwJWzUlPryN/SJdSflZvROM2TwkT0GMpq7oqT48NRd4GS7BiVBc5OQ==}
-    engines: {node: '>= 0.8.0'}
-    hasBin: true
 
   esbuild@0.27.7:
     resolution: {integrity: sha512-IxpibTjyVnmrIQo5aqNpCgoACA/dTKLTlhMHihVHhdkxKyPO1uBBthumT0rdHmcsk9uMonIWS0m4FljWzILh3w==}
@@ -371,10 +357,6 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@types/blessed@0.1.27':
-    dependencies:
-      '@types/node': 25.5.2
-
   '@types/node@25.5.2':
     dependencies:
       undici-types: 7.18.2
@@ -388,8 +370,6 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.23(zod@4.3.6)
       '@opentelemetry/api': 1.9.0
       zod: 4.3.6
-
-  blessed@0.1.81: {}
 
   esbuild@0.27.7:
     optionalDependencies:
