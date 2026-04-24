@@ -32,7 +32,8 @@ export type GameEvent =
   | ExecuteEvent
   | {
       type: 'start-to-defend';
-    };
+    }
+  | { type: 'someone-lied' };
 
 export interface RevealVotesEvent {
   type: 'reveal-votes';
@@ -46,12 +47,18 @@ export interface ExecuteEvent {
   id: PlayerId;
 }
 
+/**
+ * Game Settings
+ */
+
 export interface StaticPlayer {
   model: LanguageModel;
   name: string;
 }
 
-export type Player = StaticPlayer & { messages: ModelMessage[] };
+export interface Player extends StaticPlayer {
+  messages: ModelMessage[];
+}
 
 export interface Round {
   index: number;

@@ -23,7 +23,7 @@ export class Game {
   constructor(staticPlayers: readonly StaticPlayer[]) {
     this.playerMap = new Map(
       staticPlayers.map((player, i) => {
-        const id = `id-${i + 1}` as const;
+        const id: PlayerId = `id-${i + 1}`;
         const messages: ModelMessage[] = [
           {
             role: 'system',
@@ -69,7 +69,7 @@ export class Game {
 
     this.emit({
       type: 'broadcast',
-      content: `第 ${this.roundIndex} 輪開始，存活受驗者為 ${this.playerIds.join('、')}`,
+      content: `第 ${this.roundIndex} 輪開始，存活受驗者為 ${this.playerIds.join('、')}。`,
     });
   }
 
@@ -108,7 +108,9 @@ export class Game {
 
       case 'reveal-votes':
         this.doPushUserContent({
-          content: `廣播：${votePhase(event.phase)}投票結果為${[...event.result]
+          content: `廣播：${votePhase(event.phase)}投票結果為 ${[
+            ...event.result,
+          ]
             .map((v) => `${v[0]} ${v[1]}票`)
             .join('、')}。`,
         });
@@ -124,6 +126,10 @@ export class Game {
         this.round!.executed.push(id);
         break;
       }
+
+      case 'someone-lied':
+        this.doPushUserContent({ content: `廣播：你們之中有人說謊了。` });
+        break;
     }
   }
 

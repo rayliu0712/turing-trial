@@ -36,11 +36,8 @@ export class CliTrial {
       }
 
       if (this.game.roundIndex === 1) {
-        this.game.emit({
-          type: 'broadcast',
-          content: '本輪不投票，你們之中有人說謊了',
-        });
-        log(['bgYellow', 'black'], '本輪不投票，你們之中有人說謊了');
+        this.game.emit({ type: 'someone-lied' });
+        log(['bgYellow', 'black'], '你們之中有人說謊了');
         continue;
       }
 
