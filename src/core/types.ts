@@ -48,7 +48,7 @@ export interface ExecuteEvent {
 }
 
 /**
- * Game Settings
+ * Player & Round
  */
 
 export interface StaticPlayer {
@@ -65,10 +65,4 @@ export interface Round {
   playerIds: PlayerId[];
   playerSet: Set<PlayerId>;
   executed: PlayerId[];
-}
-
-export interface TrialConfig {
-  staticPlayers: readonly StaticPlayer[];
-  doubleVote?: boolean;
-  voteMaxRetry?: number;
 }

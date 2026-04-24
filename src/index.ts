@@ -1,11 +1,17 @@
-import { argv, loadEnvFile } from 'node:process';
-import { CliTrial } from './cli/trial.js';
-import { TuiTrial } from './tui/trial.js';
-import { config } from './config.js';
-
-const args = argv.slice(2);
-const isTui = args.some((v) => v.toLowerCase() === 'tui');
+import { loadEnvFile } from 'node:process';
+import { Trial } from './trial.js';
 
 loadEnvFile('./.env.local');
-const trial = new (isTui ? TuiTrial : CliTrial)(config);
+
+const trial = new Trial({
+  staticPlayers: [
+    { model: 'xai/grok-4.20-reasoning', name: 'Grok' },
+    { model: 'google/gemini-3-flash', name: 'Gemini' },
+    { model: 'moonshotai/kimi-k2.5', name: 'Kimi' },
+    { model: 'alibaba/qwen3.6-plus', name: 'Qwen' },
+  ],
+  // doubleVote: true,
+  // voteMaxRetry: 2,
+});
+
 await trial.loop();

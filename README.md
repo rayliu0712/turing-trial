@@ -32,10 +32,10 @@
 ### 透過 Vercel AI Gateway
 
 1. 申請一組 Vercel AI Gateway 的 API Key
-2. 根據 [.env.example](./.env.example) 建立 [.env.local](./.env.local)
+2. 根據 [`.env.example`](./.env.example) 建立 `.env.local`
 3. 執行 `npm i` 安裝依賴
-4. 在 [config.ts](./src/config.ts) 中設定模型與其他參數
-4. 執行 `npm run dev -- cli` 啟動
+4. 在 [`index.ts`](./src/index.ts) 中設定模型與其他參數
+4. 執行 `npm run dev` 啟動
 
 ### 透過其他 Provider
 
@@ -43,7 +43,7 @@
 
 ## 遊戲設定
 
-遊戲參數皆可於 [`config.ts`](./src/config.ts) 中調整。
+遊戲參數皆可於 [`index.ts`](./src/index.ts) 中調整。
 
 | 參數 | 預設值 | 說明 |
 |------|--------|------|
@@ -51,14 +51,3 @@
 | `doubleVote` | `true` | 是否啟用「提名投票 → 辯護 → 處決投票」完整流程；若為 `false`，則僅執行「處決投票」 |
 | `voteMaxRetry` | `2` | 投票結果解析失敗時的最大重試次數 |
 
-## 前端界面
-
-### CLI 模式
-
-- 不支援打斷、自定義廣播與靈光一閃功能
-- 已開發完成，執行時帶上參數 `cli`
-
-### TUI 模式
-
-- 支援所有功能
-- 仍在開發中，執行時帶上參數 `tui`

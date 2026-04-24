@@ -5,12 +5,12 @@ import type {
   PlayerId,
   VotePhase,
   RevealVotesEvent,
-  TrialConfig,
-} from '../core/types.js';
-import { Game } from '../core/game.js';
-import { execute, parseVote, revealVotes } from '../core/vote.js';
+  StaticPlayer,
+} from './core/types.js';
+import { Game } from './core/game.js';
+import { execute, parseVote, revealVotes } from './core/vote.js';
 
-export class CliTrial {
+export class Trial {
   private readonly game: Game;
   private readonly doubleVote: boolean;
   private readonly voteMaxRetry: number;
@@ -19,7 +19,11 @@ export class CliTrial {
     staticPlayers,
     doubleVote = true,
     voteMaxRetry = 2,
-  }: TrialConfig) {
+  }: {
+    staticPlayers: readonly StaticPlayer[];
+    doubleVote?: boolean;
+    voteMaxRetry?: number;
+  }) {
     this.doubleVote = doubleVote;
     this.voteMaxRetry = voteMaxRetry;
     this.game = new Game(staticPlayers);
