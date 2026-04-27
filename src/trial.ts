@@ -1,14 +1,16 @@
-import { stdout } from 'node:process';
+import { exit, stdout } from 'node:process';
 import { styleText, type InspectColor } from 'node:util';
 import { generateText, streamText } from 'ai';
-import type {
-  PlayerId,
-  VotePhase,
-  RevealVotesEvent,
-  StaticPlayer,
-} from './core/types.js';
-import { Game } from './core/game.js';
-import { execute, parseVote, revealVotes } from './core/vote.js';
+import {
+  execute,
+  Game,
+  parseVote,
+  revealVotes,
+  type PlayerId,
+  type StaticPlayer,
+  type VotePhase,
+  type VotesRevealEvent,
+} from '@rayliu0712/turing-trial-core';
 
 export class Trial {
   private readonly game: Game;
@@ -40,30 +42,34 @@ export class Trial {
       }
 
       if (this.game.roundIndex === 1) {
-        this.game.emit({ type: 'someone-lied' });
+        this.game.emit({ type: 'lie' });
         log(['bgYellow', 'black'], '你們之中有人說謊了');
         continue;
       }
 
       if (this.doubleVote) {
-        this.game.emit({ type: 'start-to-vote', phase: 'nomination' });
+        // nomination vote
+        this.game.emit({ type: 'start-vote', phase: 'nomination' });
         log(['bgWhite', 'red'], `第 ${this.game.roundIndex} 輪提名階段投票`);
         const mostVoted1 = await this.collectVotes('nomination');
 
-        this.game.emit({ type: 'start-to-defend' });
+        // defend
+        this.game.emit({ type: 'start-defend' });
         log(['bgYellow', 'black'], `第 ${this.game.roundIndex} 輪辯護`);
         for (const id of mostVoted1) {
           await this.speak(id);
         }
 
-        this.game.emit({ type: 'start-to-vote', phase: 'execution' });
+        // execution vote
+        this.game.emit({ type: 'start-vote', phase: 'execution' });
         log(['bgWhite', 'red'], `第 ${this.game.roundIndex} 輪抹殺階段投票`);
         const mostVoted2 = await this.collectVotes('execution');
         this.doExecute(mostVoted2);
         continue;
       }
 
-      this.game.emit({ type: 'start-to-vote' });
+      // no double vote
+      this.game.emit({ type: 'start-vote' });
       log(['bgWhite', 'red'], `第 ${this.game.roundIndex} 輪投票`);
       const mostVoted = await this.collectVotes();
       this.doExecute(mostVoted);
@@ -118,8 +124,12 @@ export class Trial {
     );
     stdout.write('\n');
 
-    const event: RevealVotesEvent = { ...revealVotes(votes), phase };
+    const event: VotesRevealEvent = { ...revealVotes(votes), phase };
     this.game.emit(event);
+    if (event.isDraw) {
+      log(['bgYellow', 'black'], '全部同票，審判結束');
+      exit();
+    }
     return event.mostVoted;
   }
 
