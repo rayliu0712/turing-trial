@@ -2,21 +2,19 @@
   "type": "module",
   "name": "turing-trial",
   "version": "1.0.0",
-  "description": "",
   "main": "./src/index.ts",
   "scripts": {
     "dev": "tsx ."
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
   "devDependencies": {
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "ai": "^6.0.154"
+    "@rayliu0712/turing-trial-core": "^2.0.4",
+    "ai": "^6.0.168"
   }
 }
